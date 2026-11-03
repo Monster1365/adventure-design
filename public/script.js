@@ -48,6 +48,7 @@ const level = (p) => LEVELS.find((l) => p >= l.min);
 
 let user = null,
   providers = [],
+  providersErr = false,
   booted,
   menus = null,
   menusErr = "",
@@ -226,6 +227,7 @@ async function boot() {
     api("/auth/providers"),
   ]);
   providers = pv.value?.providers || [];
+  providersErr = pv.status === "rejected";
   if (me.value?.user) signedIn(me.value.user);
   if (err)
     toast(
@@ -797,6 +799,8 @@ document.addEventListener("click", (e) => {
   if (d.login) {
     if (providers.includes(d.login))
       return (location.href = `/api/auth/${d.login}/start`);
+    if (providersErr)
+      return toast("서버에 연결할 수 없어요. 잠시 후 다시 시도해주세요");
     return toast(`${PROVIDER_LABEL[d.login]} 로그인이 아직 설정되지 않았어요`);
   }
   if ("logout" in d)

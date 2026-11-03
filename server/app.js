@@ -20,6 +20,8 @@ function createApp(db) {
   };
 
   app.disable("x-powered-by");
+  // Vercel 프록시 뒤에서 https 를 인식하도록 (OAuth redirect_uri, Secure 쿠키)
+  if (process.env.VERCEL) app.set("trust proxy", true);
   app.use(express.json({ limit: "32kb" }));
   app.use(sessionMiddleware(store));
   app.use("/api", api);

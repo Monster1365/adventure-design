@@ -1,4 +1,5 @@
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const Database = require("better-sqlite3");
 
@@ -99,7 +100,12 @@ function syncFoodInfo(db) {
   })();
 }
 
-function open(file = process.env.DB_PATH || path.join(__dirname, "..", "data", "app.db")) {
+// Vercel 처럼 프로젝트 폴더에 쓸 수 없는 서버리스 환경에서는 임시 폴더를 쓴다
+const DEFAULT_DB = process.env.VERCEL
+  ? path.join(os.tmpdir(), "app.db")
+  : path.join(__dirname, "..", "data", "app.db");
+
+function open(file = process.env.DB_PATH || DEFAULT_DB) {
   if (file !== ":memory:") fs.mkdirSync(path.dirname(file), { recursive: true });
   const db = new Database(file);
   db.pragma("journal_mode = WAL");
