@@ -620,7 +620,7 @@ function rvForm() {
   return `<form class="rvf" id="rvForm"><div class="pick" role="radiogroup" aria-label="별점">${[1, 2, 3, 4, 5].map((n) => `<button type="button" role="radio" aria-checked="${d.rating === n}" aria-label="${n}점" class="${n <= d.rating ? "on" : ""}" data-star="${n}">★</button>`).join("")}</div><textarea id="rvText" maxlength="500" rows="3" placeholder="맛, 양, 온도는 어땠나요?">${esc(d.content)}</textarea><div class="rvf-b"><small id="rvCnt">${d.content.length}/500</small>${rv.editing ? '<button type="button" class="add" data-rvcancel>취소</button>' : ""}<button class="add pri" ${rv.saving ? "disabled" : ""}>${rv.saving ? "저장 중…" : rv.editing ? "수정 완료" : "리뷰 등록"}</button></div></form>`;
 }
 function rvCard(r, mine) {
-  return `<article class="rvc ${mine ? "mine" : ""}"><header><b><span class="nm">${esc(r.userName)}</span>${mine ? '<span class="chip">내 리뷰</span>' : ""}</b><small>${day(r.createdAt)}${r.updatedAt !== r.createdAt ? " · 수정됨" : ""}</small></header>${stars(r.rating)}<p>${esc(r.content)}</p>${mine ? `<div class="acts"><button class="add" data-rvedit>수정</button><button class="add ${rv.confirmDel ? "warn" : ""}" data-rvdel>${rv.confirmDel ? "한 번 더 누르면 삭제돼요" : "삭제"}</button></div>` : ""}</article>`;
+  return `<article class="rvc ${mine ? "mine" : ""}"><header><b><span class="nm">${esc(r.authorName)}</span>${mine ? '<span class="chip">내 리뷰</span>' : ""}</b><small>${day(r.createdAt)}${r.updatedAt !== r.createdAt ? " · 수정됨" : ""}</small></header>${stars(r.rating)}<p>${esc(r.content)}</p>${mine ? `<div class="acts"><button class="add" data-rvedit>수정</button><button class="add ${rv.confirmDel ? "warn" : ""}" data-rvdel>${rv.confirmDel ? "한 번 더 누르면 삭제돼요" : "삭제"}</button></div>` : ""}</article>`;
 }
 function renderRv() {
   if (!rv) return;

@@ -426,6 +426,15 @@ describe("리뷰", () => {
     assert.equal(res.body.menu.ratingAvg, 3.5);
     assert.equal(res.body.reviews[0].content, "나중에 씀"); // 최신순
     assert.equal(res.body.me.review.id, ra.body.review.id);
+    // 작성자는 메뉴별 작성 순서의 익명 번호로만 노출, 이름·ID 는 응답에 없음
+    assert.deepEqual(res.body.reviews.map((r) => r.authorName), ["익명2", "익명1"]);
+    assert.equal(res.body.me.review.authorName, "익명1");
+    assert.equal(ra.body.review.authorName, "익명1");
+    for (const r of [...res.body.reviews, res.body.me.review, ra.body.review]) {
+      assert.equal(r.userName, undefined);
+      assert.equal(r.userId, undefined);
+    }
+    assert.doesNotMatch(JSON.stringify(res.body), /rv-a|rv-b/);
 
     assert.equal(
       (await call("PUT", `/api/reviews/${ra.body.review.id}`, { user: a, body: { rating: 4, content: "수정함" } })).status,

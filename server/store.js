@@ -283,13 +283,17 @@ function createStore(pool) {
 
   /* ---------- 리뷰 ---------- */
 
-  const reviewCols = `r.id, r.menu_id AS "menuId", r.user_id AS "userId", u.name AS "userName", r.rating, r.content,
-                      r.created_at AS "createdAt", r.updated_at AS "updatedAt"`;
+  // 작성자는 이름·ID 대신 메뉴별 작성 순서로 '익명1', '익명2' … 로만 내보낸다
+  const reviewCols = `r.id, r.menu_id AS "menuId", r.rating, r.content,
+                      r.created_at AS "createdAt", r.updated_at AS "updatedAt",
+                      '익명' || (SELECT COUNT(*) FROM reviews r2
+                                WHERE r2.menu_id = r.menu_id AND (r2.created_at, r2.id) <= (r.created_at, r.id))
+                        AS "authorName"`;
 
   async function listReviews(menuId) {
     await getMenu(menuId);
     return rows(
-      `SELECT ${reviewCols} FROM reviews r JOIN users u ON u.id = r.user_id
+      `SELECT ${reviewCols} FROM reviews r
        WHERE r.menu_id = $1 ORDER BY r.created_at DESC, r.id DESC`,
       [menuId],
     );
@@ -298,7 +302,7 @@ function createStore(pool) {
   function listMyReviews(userId) {
     return rows(
       `SELECT ${reviewCols}, m.name AS "menuName", m.image AS "menuImage"
-       FROM reviews r JOIN users u ON u.id = r.user_id JOIN menus m ON m.id = r.menu_id
+       FROM reviews r JOIN menus m ON m.id = r.menu_id
        WHERE r.user_id = $1 ORDER BY r.created_at DESC, r.id DESC`,
       [userId],
     );
@@ -332,7 +336,7 @@ function createStore(pool) {
   async function reviewEligibility(userId, menuId) {
     await getMenu(menuId);
     const mine = await row(
-      `SELECT ${reviewCols} FROM reviews r JOIN users u ON u.id = r.user_id WHERE r.user_id = $1 AND r.menu_id = $2`,
+      `SELECT ${reviewCols} FROM reviews r WHERE r.user_id = $1 AND r.menu_id = $2`,
       [userId, menuId],
     );
     return { ordered: await hasOrdered(userId, menuId), review: mine || null };
@@ -349,7 +353,7 @@ function createStore(pool) {
   }
 
   function getReview(id) {
-    return row(`SELECT ${reviewCols} FROM reviews r JOIN users u ON u.id = r.user_id WHERE r.id = $1`, [id]);
+    return row(`SELECT ${reviewCols} FROM reviews r WHERE r.id = $1`, [id]);
   }
 
   async function createReview(userId, menuId, body) {
@@ -371,9 +375,8 @@ function createStore(pool) {
   }
 
   async function ownReview(userId, reviewId) {
-    const rv = await getReview(reviewId);
-    if (!rv || rv.userId !== userId) throw new AppError(404, "review_not_found", "리뷰를 찾을 수 없습니다.");
-    return rv;
+    const owner = await row("SELECT user_id FROM reviews WHERE id = $1", [reviewId]);
+    if (!owner || owner.user_id !== userId) throw new AppError(404, "review_not_found", "리뷰를 찾을 수 없습니다.");
   }
 
   async function updateReview(userId, reviewId, body) {
