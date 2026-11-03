@@ -9,7 +9,13 @@ const { createApp } = require("./app");
 const { enabledProviders } = require("./auth");
 
 const port = Number(process.env.PORT) || 3000;
-createApp(open()).listen(port, () => {
+const pool = open();
+// 시작할 때 DB 연결·스키마를 미리 확인해, 설정이 잘못됐으면 바로 알 수 있게 한다
+pool.ready().catch((e) => {
+  console.error("DB 초기화 실패:", e.message);
+  process.exit(1);
+});
+createApp(pool).listen(port, () => {
   const on = enabledProviders();
   console.log(`학식먹자 서버: http://localhost:${port}`);
   console.log(

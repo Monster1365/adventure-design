@@ -7,13 +7,16 @@ const img = (m) =>
   /^(https?:)?\//.test(m.image)
     ? `<img src="${esc(m.image)}" alt="" />`
     : esc(m.image);
+// 서버 시각(ISO 문자열, 시간대 표시 없으면 UTC로 간주) → Date
+const toDate = (s) =>
+  new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : String(s).replace(" ", "T") + "Z");
 const day = (s) => {
-  const d = new Date(s.replace(" ", "T") + "Z"),
+  const d = toDate(s),
     p = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}`;
 };
 const time = (s) => {
-  const d = new Date(s.replace(" ", "T") + "Z");
+  const d = toDate(s);
   return `${day(s)} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 const stars = (n) =>

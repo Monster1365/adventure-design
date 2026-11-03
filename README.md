@@ -1,6 +1,6 @@
 # 학식먹자
 
-학생식당 사전 주문 서비스. 기존 정적 프로토타입(`public/`)에 SQLite + Express API 를 연결했다.
+학생식당 사전 주문 서비스. 기존 정적 프로토타입(`public/`)에 Express API 와 PostgreSQL 을 연결했다.
 
 ![학식먹자 시스템 아키텍처](docs/architecture.png)
 
@@ -8,12 +8,16 @@
 
 ```bash
 npm install
-cp .env.example .env   # 사용할 로그인 공급자의 키 입력
+# .env 에 DATABASE_URL(PostgreSQL 연결 문자열)과 사용할 로그인 공급자의 키 입력
 npm start              # http://localhost:3000
-npm test               # API 통합 테스트
+npm test               # API 통합 테스트 (임시 PostgreSQL 을 자동으로 띄움)
 ```
 
-Node.js 20.12 이상. DB 파일은 처음 실행할 때 `data/app.db` 에 만들어지고, 기존 프로토타입의 메뉴가 초기 데이터로 들어간다.
+Node.js 22. 서버가 처음 DB 에 연결될 때 `schema.sql` 로 테이블을 만들고, 메뉴가 비어 있으면 기존 프로토타입의 메뉴를 초기 데이터로 넣는다.
+여러 서버가 동시에 떠도 초기화는 PostgreSQL advisory lock 으로 한 번에 하나만 실행된다.
+
+`npm test` 는 `embedded-postgres` 로 임시 PostgreSQL 을 띄워 실행하고 끝나면 지운다.
+이미 있는 빈 DB 로 돌리려면 `TEST_DATABASE_URL` 을 지정한다(테스트가 데이터를 쓰므로 운영 DB 는 쓰지 말 것).
 
 ## 구조
 
@@ -21,7 +25,7 @@ Node.js 20.12 이상. DB 파일은 처음 실행할 때 `data/app.db` 에 만들
 public/            기존 프론트엔드 (index.html, script.js, style.css)
 server/
   schema.sql       테이블 · 인덱스 · 트리거
-  db.js            연결(외래 키 ON), 스키마 적용, 초기 메뉴
+  db.js            PostgreSQL 연결 풀, 스키마 적용, 초기 메뉴
   store.js         데이터 접근 계층 (SQL, 트랜잭션, 검증)
   auth.js          외부 로그인(OAuth 2.0) 연동, 세션
   food-info.js     메뉴별 알레르기 · 코너별 원산지 (원본 데이터, 시작 시 DB 동기화)
@@ -36,18 +40,17 @@ test/api.test.js   통합 테스트
 각 개발자 콘솔에 등록할 Redirect URI: `${BASE_URL}/api/auth/<kakao|naver|google>/callback`
 
 - 키와 공급자 액세스 토큰은 서버에서만 사용하고 저장하거나 프론트엔드로 보내지 않는다.
-- 로그인에 성공하면 사용자 정보를 서버 비밀키로 HMAC 서명한 `HttpOnly` 세션 쿠키(7일)를 발급한다.
-  세션을 DB 에 두지 않으므로 서버 인스턴스가 바뀌거나 DB 가 초기화돼도 로그인이 유지된다(사용자 레코드는 자동 생성).
-- 서명 키는 `SESSION_SECRET`, 없으면 설정된 공급자 시크릿에서 만든 고정 키를 쓴다. 로그아웃은 쿠키 삭제다.
+- 로그인에 성공하면 무작위 세션 토큰을 `HttpOnly` 쿠키(30일)로 발급하고, DB `sessions` 테이블에는 토큰의 SHA-256 해시만 저장한다.
+- 로그아웃하면 DB 의 세션을 지우므로 같은 쿠키로도 다시 접근할 수 없다.
 
 ## 배포 (Vercel)
 
 `api/index.js` 가 Express 앱을 서버리스 함수로 내보내고, `vercel.json` 이 `/api/*` 요청을 그쪽으로 보낸다. 화면은 `public/` 이 정적으로 서빙된다.
 
-- 환경변수: `BASE_URL=https://<배포 도메인>`, `COOKIE_SECURE=1`, `SESSION_SECRET`(권장), 사용할 공급자의 `*_CLIENT_ID` / `*_CLIENT_SECRET`
+- 환경변수: `DATABASE_URL`, `BASE_URL=https://<배포 도메인>`, `COOKIE_SECURE=1`, 사용할 공급자의 `*_CLIENT_ID` / `*_CLIENT_SECRET`
+- `DATABASE_URL` 은 서버리스용 **풀링(pooled) 연결 문자열**을 권장한다 (Neon: 호스트에 `-pooler`, Supabase: Transaction pooler). 인스턴스당 연결은 최대 3개.
 - 각 공급자 콘솔에 `https://<배포 도메인>/api/auth/<provider>/callback` 을 Redirect URI 로 등록
 - 환경변수를 바꾸면 다시 배포해야 적용된다
-- **DB 는 `/tmp` 의 임시 파일**이라 인스턴스가 새로 뜨면 초기 메뉴 상태로 돌아간다(주문·리뷰·즐겨찾기 유지 안 됨). 로그인은 서명 쿠키라 유지된다.
 
 ## 식품 정보 (알레르기 · 원산지)
 

@@ -1,7 +1,10 @@
 const fs = require("fs");
-const os = require("os");
 const path = require("path");
-const Database = require("better-sqlite3");
+const { Pool, types } = require("pg");
+
+// COUNT/SUM(bigint)과 numeric 을 문자열이 아닌 JS 숫자로 받는다 (값 범위가 작아 안전)
+types.setTypeParser(20, (v) => parseInt(v, 10));
+types.setTypeParser(1700, parseFloat);
 
 // 기존 프론트엔드(script.js)에 하드코딩돼 있던 메뉴를 초기 데이터로 옮긴 것.
 // stock 0 = 기존 "품절" 표시 메뉴
@@ -65,55 +68,83 @@ const SEED_MENUS = {
   ],
 };
 
-function seed(db) {
-  if (db.prepare("SELECT COUNT(*) AS n FROM menus").get().n) return;
-  const ins = db.prepare(
-    "INSERT INTO menus (category, name, price, image, stock, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+const SCHEMA = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
+const INIT_LOCK = 724100; // 여러 서버가 동시에 떠도 초기화는 한 번에 하나만
+
+// 메뉴가 비어 있을 때만 초기 메뉴를 넣는다 (한 번의 INSERT)
+async function seed(c) {
+  const { rows } = await c.query("SELECT COUNT(*) AS n FROM menus");
+  if (rows[0].n) return;
+  const cols = [[], [], [], [], [], []];
+  let i = 0;
+  for (const [cat, items] of Object.entries(SEED_MENUS))
+    for (const [name, price, image, stock = SEED_STOCK] of items)
+      [cat, name, price, image, stock, i++].forEach((v, k) => cols[k].push(v));
+  await c.query(
+    `INSERT INTO menus (category, name, price, image, stock, sort_order)
+     SELECT * FROM unnest($1::text[], $2::text[], $3::int[], $4::text[], $5::int[], $6::int[])`,
+    cols,
   );
-  db.transaction(() => {
-    let i = 0;
-    for (const [cat, items] of Object.entries(SEED_MENUS))
-      for (const [name, price, image, stock = SEED_STOCK] of items)
-        ins.run(cat, name, price, image, stock, i++);
-  })();
 }
 
 // food-info.js 내용으로 식품 정보 테이블을 다시 맞춘다 (파일이 원본)
-function syncFoodInfo(db) {
+async function syncFoodInfo(c) {
   const { ALLERGENS, MENU_ALLERGENS, ORIGINS } = require("./food-info");
-  const insAllergen = db.prepare("INSERT OR IGNORE INTO allergens (name) VALUES (?)");
-  const insMenuAllergen = db.prepare("INSERT INTO menu_allergens (menu_id, allergen_id) VALUES (?, ?)");
-  const insOrigin = db.prepare(
-    "INSERT INTO category_origins (category, ingredient, origin, sort_order) VALUES (?, ?, ?, ?)",
+  await c.query("INSERT INTO allergens (name) SELECT unnest($1::text[]) ON CONFLICT (name) DO NOTHING", [
+    ALLERGENS,
+  ]);
+  const ids = new Map((await c.query("SELECT name, id FROM allergens")).rows.map((r) => [r.name, r.id]));
+  const menus = (await c.query("SELECT id, category, name FROM menus")).rows;
+  const ma = [[], []];
+  for (const m of menus)
+    for (const a of MENU_ALLERGENS[`${m.category}/${m.name}`] || []) {
+      if (!ids.has(a)) throw new Error(`food-info.js: 알 수 없는 알레르기 유발물질 "${a}"`);
+      ma[0].push(m.id);
+      ma[1].push(ids.get(a));
+    }
+  const co = [[], [], [], []];
+  for (const [category, items] of Object.entries(ORIGINS))
+    items.forEach(([ingredient, origin], i) => [category, ingredient, origin, i].forEach((v, k) => co[k].push(v)));
+  await c.query("DELETE FROM menu_allergens");
+  await c.query("DELETE FROM category_origins");
+  await c.query("INSERT INTO menu_allergens SELECT * FROM unnest($1::int[], $2::int[])", ma);
+  await c.query(
+    `INSERT INTO category_origins (category, ingredient, origin, sort_order)
+     SELECT * FROM unnest($1::text[], $2::text[], $3::text[], $4::int[])`,
+    co,
   );
-  db.transaction(() => {
-    ALLERGENS.forEach((n) => insAllergen.run(n));
-    const ids = new Map(db.prepare("SELECT name, id FROM allergens").all().map((r) => [r.name, r.id]));
-    db.exec("DELETE FROM menu_allergens; DELETE FROM category_origins;");
-    for (const m of db.prepare("SELECT id, category, name FROM menus").all())
-      for (const a of MENU_ALLERGENS[`${m.category}/${m.name}`] || []) {
-        if (!ids.has(a)) throw new Error(`food-info.js: 알 수 없는 알레르기 유발물질 "${a}"`);
-        insMenuAllergen.run(m.id, ids.get(a));
-      }
-    for (const [category, items] of Object.entries(ORIGINS))
-      items.forEach(([ingredient, origin], i) => insOrigin.run(category, ingredient, origin, i));
-  })();
 }
 
-// Vercel 처럼 프로젝트 폴더에 쓸 수 없는 서버리스 환경에서는 임시 폴더를 쓴다
-const DEFAULT_DB = process.env.VERCEL
-  ? path.join(os.tmpdir(), "app.db")
-  : path.join(__dirname, "..", "data", "app.db");
+// 스키마 적용 + 초기 데이터 + 식품 정보 동기화를 하나의 트랜잭션으로
+async function init(pool) {
+  const c = await pool.connect();
+  try {
+    await c.query("BEGIN");
+    await c.query("SELECT pg_advisory_xact_lock($1)", [INIT_LOCK]);
+    await c.query(SCHEMA);
+    await seed(c);
+    await syncFoodInfo(c);
+    await c.query("COMMIT");
+  } catch (e) {
+    await c.query("ROLLBACK").catch(() => {});
+    throw e;
+  } finally {
+    c.release();
+  }
+}
 
-function open(file = process.env.DB_PATH || DEFAULT_DB) {
-  if (file !== ":memory:") fs.mkdirSync(path.dirname(file), { recursive: true });
-  const db = new Database(file);
-  db.pragma("journal_mode = WAL");
-  db.pragma("foreign_keys = ON");
-  db.exec(fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8"));
-  seed(db);
-  syncFoodInfo(db);
-  return db;
+// DATABASE_URL 로 연결 풀을 만든다. pool.ready() 는 첫 호출 때 한 번만 초기화하고, 실패하면 다음 호출에 다시 시도한다.
+function open(url = process.env.DATABASE_URL) {
+  if (!url) throw new Error("DATABASE_URL 이 설정되지 않았습니다. PostgreSQL 연결 문자열을 환경변수로 넣어주세요.");
+  // 서버리스(Vercel)는 인스턴스가 여러 개 뜰 수 있어 인스턴스당 연결 수를 적게 둔다
+  const pool = new Pool({ connectionString: url, max: process.env.VERCEL ? 3 : 10 });
+  let ready = null;
+  pool.ready = () =>
+    (ready ??= init(pool).catch((e) => {
+      ready = null;
+      throw e;
+    }));
+  return pool;
 }
 
 module.exports = { open };
