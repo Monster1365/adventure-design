@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>학식먹자</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gothic+A1:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="mascot.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app" id="app">
+      <section class="scr on" id="splash">
+        <div class="c">
+          <div class="word">학식먹자!</div>
+          <p class="tag">줄 서기 전에, 먼저 주문하세요</p>
+          <img class="mas" alt="학식먹자 마스코트" src="mascot.png" />
+        </div>
+        <button class="btn" data-start>시작하기</button>
+      </section>
+
+      <section class="scr" id="login">
+        <div class="c">
+          <h2>로그인<br />해주세요</h2>
+          <img class="mas" alt="" src="mascot.png" />
+        </div>
+        <div class="sns">
+          <p>간편로그인</p>
+          <div>
+            <button data-login="kakao">
+              <i style="background: #fae100; color: #3a1d1d">●</i>카카오톡
+            </button>
+            <button data-login="naver">
+              <i style="background: #03c75a">N</i>네이버
+            </button>
+            <button data-login="google">
+              <i style="background: #d14836">g+</i>구글
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="scr" id="home">
+        <div class="hello">
+          <b class="who" id="userName"></b>
+          <button class="av" data-go="me" aria-label="정보">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z" />
+            </svg>
+          </button>
+        </div>
+        <div class="body">
+          <button
+            class="live"
+            id="live"
+            data-go="crowd"
+            aria-label="혼잡도 자세히 보기"
+          >
+            <div class="lv-top">
+              <div class="ring">
+                <svg viewBox="0 0 100 100" aria-hidden="true">
+                  <circle class="track" cx="50" cy="50" r="44" />
+                  <circle
+                    class="prog"
+                    id="liveRing"
+                    cx="50"
+                    cy="50"
+                    r="44"
+                    pathLength="100"
+                    stroke-dasharray="0 100"
+                  />
+                </svg>
+                <div class="n"><span id="liveN">–</span><small>%</small></div>
+              </div>
+              <div class="lv-r">
+                <div class="s">
+                  <i class="dot"></i><span id="liveS">확인 중</span>
+                </div>
+                <div class="t" id="liveT">혼잡도를 불러오고 있어요</div>
+              </div>
+            </div>
+          </button>
+          <div class="rows">
+            <button class="row" data-go="menu">
+              <span class="ic"
+                ><svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <path
+                    d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 21V3c-2.5 1.5-3.5 4-3.5 7.5V14H17"
+                  /></svg
+              ></span>
+              <div>
+                <b>메뉴 고르기</b><span>오늘의 메뉴를 보고 바로 주문해요</span>
+              </div>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              >
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </button>
+            <button class="row" data-go="crowd">
+              <span class="ic"
+                ><svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 17l5-6 4 3 8-9" />
+                  <path d="M3 21h18" /></svg
+              ></span>
+              <div><b>혼잡도 표시</b><span>실시간 대기 상황 확인</span></div>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              >
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </button>
+            <button class="row" data-go="history">
+              <span class="ic"
+                ><svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
+                  <path d="M9 8h6M9 12h6" /></svg
+              ></span>
+              <div><b>주문내역</b><span>지난 주문을 다시 담아요</span></div>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              >
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </button>
+            <button class="row" data-go="write">
+              <span class="ic"
+                ><svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"
+                  /></svg
+              ></span>
+              <div>
+                <b>리뷰 쓰기</b><span>주문했던 메뉴에 별점을 남겨요</span>
+              </div>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              >
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </button>
+            <button class="row" data-go="stats">
+              <span class="ic"
+                ><svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <path d="M5 20V10M12 20V4M19 20v-7" /></svg
+              ></span>
+              <div>
+                <b>메뉴별 주문 건수</b
+                ><span>어떤 메뉴가 많이 팔렸는지 봐요</span>
+              </div>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              >
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </button>
+            <button class="row" data-go="food">
+              <span class="ic"
+                ><svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M9 3h6M10 3v5L5 18a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3L14 8V3"
+                  />
+                  <path d="M7.5 14h9" /></svg
+              ></span>
+              <div><b>식품 정보</b><span>알레르기·원산지를 확인해요</span></div>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              >
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <nav class="nav" data-nav></nav>
+      </section>
+
+      <section class="scr" id="menu">
+        <div class="top">
+          <button class="ib" data-back="home" aria-label="뒤로">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+            >
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <h1>메뉴</h1>
+        </div>
+        <div class="tabs" id="tabs" role="tablist"></div>
+        <div class="tools">
+          <label class="sort">
+            <span class="sr">정렬</span>
+            <select id="sort" aria-label="정렬 기준">
+              <option value="default">기본순</option>
+              <option value="price_asc">가격 낮은 순</option>
+              <option value="price_desc">가격 높은 순</option>
+              <option value="rating_desc">별점 높은 순</option>
+              <option value="rating_asc">별점 낮은 순</option>
+            </select>
+          </label>
+        </div>
+        <div class="body" id="list"></div>
+        <button class="fab hide" id="fab" aria-label="장바구니 열기">
+          <svg
+            width="26"
+            height="26"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="9" cy="20" r="1.5" />
+            <circle cx="18" cy="20" r="1.5" />
+            <path d="M2 3h3l2.5 12h11L21 7H6" /></svg
+          ><span class="bdg" id="bdg">0</span>
+        </button>
+        <div class="foot">
+          <button class="btn" id="orderBtn" data-go="cart" disabled>
+            메뉴를 담아주세요
+          </button>
+        </div>
+        <div class="dim" id="dim"></div>
+        <div
+          class="sheet"
+          id="sheet"
+          role="dialog"
+          aria-label="장바구니 미리보기"
+        >
+          <div class="grab"></div>
+          <div class="sh-h">
+            <b>장바구니</b
+            ><button class="ib" id="shClose" aria-label="닫기">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+              >
+                <path d="M6 6l12 12M18 6 6 18" />
+              </svg>
+            </button>
+          </div>
+          <div id="shList"></div>
+          <button class="btn" style="margin-top: 8px" data-go="cart">
+            장바구니 보기
+          </button>
+        </div>
+      </section>
+
+      <section class="scr" id="cart">
+        <div class="top">
+          <button class="ib" data-back="menu" aria-label="뒤로">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+            >
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <h1>장바구니</h1>
+        </div>
+        <div class="body" id="cartList"></div>
+        <div class="foot">
+          <div class="total">
+            <span>총 결제 금액</span><b id="cartTotal">0원</b>
+          </div>
+          <button class="btn" data-go="pay" id="toPay">결제하기</button>
+        </div>
+      </section>
+
+      <section class="scr" id="pay">
+        <div class="top">
+          <button class="ib" data-back="cart" aria-label="뒤로">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+            >
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <h1>결제</h1>
+        </div>
+        <div class="body">
+          <p class="lab">결제수단</p>
+          <div
+            class="pay"
+            role="radiogroup"
+            aria-label="결제수단"
+            id="payOpts"
+          ></div>
+          <div
+            class="card"
+            style="
+              margin-top: 14px;
+              display: flex;
+              justify-content: space-between;
+              align-items: baseline;
+            "
+          >
+            <span style="color: var(--sub); font-weight: 700; font-size: 15px"
+              >총 결제 금액</span
+            ><b id="payTotal" style="font-size: 24px; font-weight: 800">0원</b>
+          </div>
+        </div>
+        <div class="foot">
+          <button class="btn" id="placeBtn">주문하기</button>
+        </div>
+      </section>
+
+      <section class="scr" id="done">
+        <div class="done">
+          <span class="ok"
+            ><svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#fff"
+              stroke-width="2.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" fill="#0A9CB5" stroke="none" />
+              <path d="m7.5 12.5 3 3 6-7" /></svg
+            >주문 완료</span
+          >
+          <p>교환권 번호</p>
+          <div class="no" id="ticketNo">123</div>
+        </div>
+        <div class="body" style="padding: 0; display: flex">
+          <div class="rc">
+            <h2>영수증</h2>
+            <small>고객용</small>
+            <div id="rcList"></div>
+            <div class="rt"><span>합계</span><span id="rcTotal"></span></div>
+          </div>
+        </div>
+        <div class="foot">
+          <button class="btn" data-go="home" id="doneBtn">
+            홈으로 돌아가기
+          </button>
+        </div>
+      </section>
+
+      <section class="scr" id="crowd">
+        <div class="top">
+          <button class="ib" data-back="home" aria-label="뒤로">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+            >
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <h1>실시간 혼잡도</h1>
+        </div>
+        <div class="body">
+          <div class="card">
+            <h2>혼잡도 수치</h2>
+            <div class="gauge">
+              <svg viewBox="0 0 200 110" width="200">
+                <defs>
+                  <linearGradient id="g" x1="0" x2="1">
+                    <stop offset="0" stop-color="#F6C443" />
+                    <stop offset="1" stop-color="#D6342B" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M16 104a84 84 0 0 1 168 0"
+                  fill="none"
+                  stroke="var(--line)"
+                  stroke-width="12"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M16 104a84 84 0 0 1 168 0"
+                  fill="none"
+                  stroke="url(#g)"
+                  stroke-width="12"
+                  stroke-linecap="round"
+                  pathLength="100"
+                  stroke-dasharray="0 100"
+                  id="gArc"
+                />
+              </svg>
+              <div class="v">
+                <p id="gN">–</p>
+                <small id="gS">확인 중</small>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <h2>혼잡도 그래프</h2>
+            <svg
+              viewBox="0 0 300 130"
+              width="100%"
+              role="img"
+              id="graph"
+              aria-label="오늘 시간대별 혼잡도"
+            >
+              <defs>
+                <linearGradient id="a" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#0A9CB5" stop-opacity=".25" />
+                  <stop offset="1" stop-color="#0A9CB5" stop-opacity="0" />
+                </linearGradient>
+              </defs>
+              <g stroke="var(--line)">
+                <path d="M0 20h300M0 60h300M0 100h300" />
+              </g>
+              <path id="gArea" d="M8 120 292 120V120H8z" fill="url(#a)" />
+              <path
+                id="gLine"
+                d="M8 120 292 120"
+                fill="none"
+                stroke="#0A9CB5"
+                stroke-width="3"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              />
+              <circle
+                id="gDot"
+                cx="292"
+                cy="120"
+                r="6"
+                fill="#0A9CB5"
+                stroke="#fff"
+                stroke-width="3"
+              />
+            </svg>
+            <div class="ax"><span id="gStart">11시</span><span>현재</span></div>
+          </div>
+          <div class="card">
+            <h2>대략적인 수치</h2>
+            <div class="stats">
+              <div><span>앱 주문수</span><b id="appOrders">–</b></div>
+              <div><span>키오스크 주문수</span><b>30</b></div>
+              <div><span>여석</span><b>10</b></div>
+            </div>
+            <p class="note">실제 상황과 다소 차이가 있을 수 있습니다.</p>
+          </div>
+        </div>
+        <nav class="nav" data-nav></nav>
+      </section>
+
+      <section class="scr" id="history">
+        <div class="top">
+          <button class="ib" data-back="home" aria-label="뒤로">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+            >
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <h1>주문내역</h1>
+        </div>
+        <div class="body" id="hist"></div>
+        <nav class="nav" data-nav></nav>
+      </section>
+
+      <section class="scr" id="stats">
+        <div class="top">
+          <button class="ib" data-back="home" aria-label="뒤로">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+            >
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <h1>메뉴별 주문 건수</h1>
+        </div>
+        <div class="body" id="statList"></div>
+        <nav class="nav" data-nav></nav>
+      </section>
+
+      <section class="scr" id="write">
+        <div class="top">
+          <button class="ib" data-back="home" aria-label="뒤로">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+            >
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <h1>리뷰 쓰기</h1>
+        </div>
+        <div class="body" id="writeList"></div>
+        <nav class="nav" data-nav></nav>
+      </section>
+
+      <section class="scr" id="food">
+        <div class="top">
+          <button class="ib" data-back="home" aria-label="뒤로">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+            >
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <h1>식품 정보</h1>
+        </div>
+        <div class="tabs" id="foodTabs" role="tablist"></div>
+        <div class="body" id="foodList"></div>
+        <nav class="nav" data-nav></nav>
+      </section>
+
+      <section class="scr" id="me">
+        <div class="top">
+          <button class="ib" data-back="home" aria-label="뒤로">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+            >
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <h1>정보</h1>
+        </div>
+        <div class="body" id="meBody"></div>
+        <div class="foot">
+          <button class="btn danger" data-logout>로그아웃</button>
+        </div>
+      </section>
+
+      <div class="dim" id="rvDim" data-rvclose></div>
+      <div
+        class="sheet"
+        id="rvSheet"
+        role="dialog"
+        aria-label="메뉴 리뷰"
+      ></div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
