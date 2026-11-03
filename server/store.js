@@ -10,11 +10,9 @@ class AppError extends Error {
   }
 }
 
-const SESSION_DAYS = 30;
 const CROWD_MAX = 100; // 혼잡도 100% 에 해당하는 앱 주문 수
 const KST = "'+9 hours'"; // 하루 경계는 한국 시간 기준
 const MAX_QTY = 99;
-const sha256 = (s) => crypto.createHash("sha256").update(s).digest("hex");
 
 const SORTS = {
   // 별점 정렬: 리뷰 없는 메뉴(rating_avg IS NULL)는 항상 맨 뒤, 동점이면 리뷰 수가 많은 쪽 먼저
@@ -30,7 +28,9 @@ function createStore(db) {
     `${t}id, ${t}category, ${t}name, ${t}description, ${t}price, ${t}image, ${t}stock,
      ${t}rating_avg AS ratingAvg, ${t}review_count AS reviewCount`;
 
-  /* ---------- 사용자 / 세션 ---------- */
+  /* ---------- 사용자 ---------- */
+
+  const userCols = "id, provider, name, email, profile_image AS profileImage, created_at AS createdAt";
 
   // 외부 인증 공급자에서 받은 프로필로 사용자 조회 또는 생성
   function upsertUser({ provider, providerUserId, name, email, profileImage }) {
@@ -43,35 +43,18 @@ function createStore(db) {
            email = COALESCE(excluded.email, users.email),
            profile_image = COALESCE(excluded.profile_image, users.profile_image),
            last_login_at = datetime('now')
-         RETURNING id, provider, name, email, profile_image AS profileImage, created_at AS createdAt`,
+         RETURNING ${userCols}`,
       )
       .get(provider, String(providerUserId), name, email ?? null, profileImage ?? null);
   }
 
-  function createSession(userId) {
-    const token = crypto.randomBytes(32).toString("base64url");
-    db.prepare(
-      `INSERT INTO sessions (token_hash, user_id, expires_at)
-       VALUES (?, ?, datetime('now', '+${SESSION_DAYS} days'))`,
-    ).run(sha256(token), userId);
-    return { token, maxAgeMs: SESSION_DAYS * 864e5 };
-  }
-
-  function userBySession(token) {
-    if (!token) return null;
+  // 서명된 세션 쿠키의 사용자를 조회하고, 없으면(새 서버 인스턴스의 빈 DB 등) 그 정보로 만든다
+  function ensureUser(profile) {
     return (
       db
-        .prepare(
-          `SELECT u.id, u.provider, u.name, u.email, u.profile_image AS profileImage, u.created_at AS createdAt
-           FROM sessions s JOIN users u ON u.id = s.user_id
-           WHERE s.token_hash = ? AND s.expires_at > datetime('now')`,
-        )
-        .get(sha256(token)) || null
+        .prepare(`SELECT ${userCols} FROM users WHERE provider = ? AND provider_user_id = ?`)
+        .get(profile.provider, String(profile.providerUserId)) || upsertUser(profile)
     );
-  }
-
-  function deleteSession(token) {
-    if (token) db.prepare("DELETE FROM sessions WHERE token_hash = ?").run(sha256(token));
   }
 
   /* ---------- 메뉴 ---------- */
@@ -416,9 +399,7 @@ function createStore(db) {
 
   return {
     upsertUser,
-    createSession,
-    userBySession,
-    deleteSession,
+    ensureUser,
     listMenus,
     getMenu,
     placeOrder,

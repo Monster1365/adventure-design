@@ -15,14 +15,8 @@ CREATE TABLE IF NOT EXISTS users (
   UNIQUE (provider, provider_user_id)
 );
 
--- 로그인 세션: 쿠키에는 원본 토큰, DB 에는 SHA-256 해시만 저장
-CREATE TABLE IF NOT EXISTS sessions (
-  token_hash TEXT    PRIMARY KEY,
-  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at TEXT    NOT NULL DEFAULT (datetime('now')),
-  expires_at TEXT    NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+-- 로그인 세션은 DB 가 아니라 서명된 쿠키에 담는다 (auth.js). 이전 버전의 세션 테이블 정리
+DROP TABLE IF EXISTS sessions;
 
 -- 메뉴: rating_avg / review_count 는 reviews 트리거가 갱신하는 집계 캐시
 CREATE TABLE IF NOT EXISTS menus (

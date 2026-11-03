@@ -36,7 +36,18 @@ test/api.test.js   통합 테스트
 각 개발자 콘솔에 등록할 Redirect URI: `${BASE_URL}/api/auth/<kakao|naver|google>/callback`
 
 - 키와 공급자 액세스 토큰은 서버에서만 사용하고 저장하거나 프론트엔드로 보내지 않는다.
-- 로그인에 성공하면 `HttpOnly` 세션 쿠키(30일)를 발급하고, DB 에는 토큰의 SHA-256 해시만 저장한다.
+- 로그인에 성공하면 사용자 정보를 서버 비밀키로 HMAC 서명한 `HttpOnly` 세션 쿠키(7일)를 발급한다.
+  세션을 DB 에 두지 않으므로 서버 인스턴스가 바뀌거나 DB 가 초기화돼도 로그인이 유지된다(사용자 레코드는 자동 생성).
+- 서명 키는 `SESSION_SECRET`, 없으면 설정된 공급자 시크릿에서 만든 고정 키를 쓴다. 로그아웃은 쿠키 삭제다.
+
+## 배포 (Vercel)
+
+`api/index.js` 가 Express 앱을 서버리스 함수로 내보내고, `vercel.json` 이 `/api/*` 요청을 그쪽으로 보낸다. 화면은 `public/` 이 정적으로 서빙된다.
+
+- 환경변수: `BASE_URL=https://<배포 도메인>`, `COOKIE_SECURE=1`, `SESSION_SECRET`(권장), 사용할 공급자의 `*_CLIENT_ID` / `*_CLIENT_SECRET`
+- 각 공급자 콘솔에 `https://<배포 도메인>/api/auth/<provider>/callback` 을 Redirect URI 로 등록
+- 환경변수를 바꾸면 다시 배포해야 적용된다
+- **DB 는 `/tmp` 의 임시 파일**이라 인스턴스가 새로 뜨면 초기 메뉴 상태로 돌아간다(주문·리뷰·즐겨찾기 유지 안 됨). 로그인은 서명 쿠키라 유지된다.
 
 ## 식품 정보 (알레르기 · 원산지)
 

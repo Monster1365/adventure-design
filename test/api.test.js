@@ -1,11 +1,12 @@
 // node --test test/
 // 메모리 DB 로 서버를 띄워 실제 HTTP 요청으로 검증한다.
-// 로그인은 OAuth 콜백이 내부적으로 하는 것과 같은 store.upsertUser + createSession 으로 세션을 만든다.
+// 로그인은 OAuth 콜백이 내부적으로 하는 것과 같은 store.upsertUser + signSession 으로 세션 쿠키를 만든다.
 const { test, before, after, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const { open } = require("../server/db");
 const { createApp } = require("../server/app");
 const { createStore } = require("../server/store");
+const { signSession } = require("../server/auth");
 
 let db, server, base, store;
 
@@ -18,9 +19,9 @@ before(async () => {
 });
 after(() => server.close());
 
-function login(providerUserId, name = providerUserId) {
+function login(providerUserId, name = providerUserId, days) {
   const u = store.upsertUser({ provider: "kakao", providerUserId, name });
-  return { id: u.id, cookie: `sid=${store.createSession(u.id).token}` };
+  return { id: u.id, cookie: `sid=${signSession({ ...u, providerUserId }, days)}` };
 }
 
 async function call(method, path, { user, body } = {}) {
@@ -64,20 +65,39 @@ describe("인증", () => {
     }
   });
 
-  test("위조/만료 세션 쿠키는 거부", async () => {
-    const r = await call("GET", "/api/orders", { user: { cookie: "sid=forged" } });
-    assert.equal(r.status, 401);
-    const u = login("expired");
-    db.prepare("UPDATE sessions SET expires_at = datetime('now', '-1 minute') WHERE user_id = ?").run(u.id);
-    assert.equal((await call("GET", "/api/orders", { user: u })).status, 401);
+  test("위조/변조/만료 세션 쿠키는 거부", async () => {
+    assert.equal((await call("GET", "/api/orders", { user: { cookie: "sid=forged" } })).status, 401);
+    // 다른 사람인 척 내용만 바꾸고 서명은 그대로 둔 쿠키
+    const real = login("victim").cookie.slice(4);
+    const [data, sig] = real.split(".");
+    const payload = JSON.parse(Buffer.from(data, "base64url").toString());
+    const fake = Buffer.from(JSON.stringify({ ...payload, i: "attacker", n: "공격자" })).toString("base64url");
+    assert.equal((await call("GET", "/api/orders", { user: { cookie: `sid=${fake}.${sig}` } })).status, 401);
+    // 만료
+    assert.equal((await call("GET", "/api/orders", { user: login("expired", "만료", -1) })).status, 401);
   });
 
-  test("로그아웃하면 세션이 무효화", async () => {
+  test("DB 가 비어 있어도(새 서버 인스턴스) 서명이 유효하면 로그인 유지, 사용자 자동 생성", async () => {
+    const fresh = open(":memory:");
+    const s2 = createApp(fresh).listen(0);
+    await new Promise((r) => s2.once("listening", r));
+    try {
+      const u = login("moved-user", "옮겨간사람");
+      const res = await fetch(`http://127.0.0.1:${s2.address().port}/api/me`, { headers: { Cookie: u.cookie } });
+      assert.equal((await res.json()).user.name, "옮겨간사람");
+      assert.equal(fresh.prepare("SELECT COUNT(*) FROM users").pluck().get(), 1);
+    } finally {
+      s2.close();
+    }
+  });
+
+  test("로그아웃하면 세션 쿠키를 지움", async () => {
     const u = login("logout-user");
     assert.equal((await call("GET", "/api/me", { user: u })).body.user.id, u.id);
-    assert.equal((await call("POST", "/api/auth/logout", { user: u })).status, 200);
-    assert.equal((await call("GET", "/api/me", { user: u })).body.user, null);
-    assert.equal((await call("GET", "/api/orders", { user: u })).status, 401);
+    const r = await call("POST", "/api/auth/logout", { user: u });
+    assert.equal(r.status, 200);
+    assert.match(r.headers.get("set-cookie"), /^sid=;.*Expires=Thu, 01 Jan 1970/);
+    assert.equal((await call("GET", "/api/me")).body.user, null);
   });
 
   test("같은 공급자 ID 로 재로그인하면 기존 사용자를 재사용", () => {
