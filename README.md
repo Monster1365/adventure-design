@@ -2,6 +2,21 @@
 
 학생식당 사전 주문 서비스. 기존 정적 프로토타입(`public/`)에 Express API 와 PostgreSQL 을 연결했다.
 
+## 기술 스택 · 의존성
+
+| 구분 | 이름 | 버전 | 용도 |
+|---|---|---|---|
+| 런타임 | Node.js | 22.x | 서버 실행 (`package.json` 의 `engines`) |
+| 의존성 | [express](https://www.npmjs.com/package/express) | 5.3.0 | HTTP 서버 · API 라우팅 · 정적 파일 서빙 |
+| 의존성 | [pg](https://www.npmjs.com/package/pg) | 8.16.3 | PostgreSQL 클라이언트 (연결 풀 · 트랜잭션) |
+| 개발 의존성 | [embedded-postgres](https://www.npmjs.com/package/embedded-postgres) | 17.10.0-beta.17 | 테스트용 임시 PostgreSQL (`npm test`) |
+| 데이터베이스 | PostgreSQL | — | 외부 DB (`DATABASE_URL`), 테스트는 PostgreSQL 17 |
+| 테스트 | node:test | Node.js 내장 | API 통합 테스트 |
+| 프론트엔드 | HTML · CSS · JavaScript | — | 프레임워크·빌드 없음, 웹폰트(Black Han Sans, Gothic A1)만 Google Fonts 사용 |
+| 배포 | Vercel | — | `public/` 정적 파일 + `api/index.js` 서버리스 함수 |
+
+버전은 `package-lock.json` 에 설치된 버전 기준이다. 외부 로그인은 라이브러리 없이 각 공급자의 OAuth 2.0 API 를 직접 호출한다.
+
 ![학식먹자 시스템 아키텍처](docs/architecture.png)
 
 ## 실행
