@@ -14,6 +14,8 @@ class AppError extends Error {
 const SESSION_DAYS = 30;
 const CROWD_MAX = 100; // 혼잡도 100% 에 해당하는 앱 주문 수
 const TZ = "'Asia/Seoul'"; // "오늘"의 기준 시간대
+// 한국 시간 기준 오늘 들어온 주문인지 (매일 자정에 0부터 다시 세는 집계에 사용)
+const isToday = (col) => `(${col} AT TIME ZONE ${TZ})::date = (now() AT TIME ZONE ${TZ})::date`;
 const MAX_QTY = 99;
 const sha256 = (s) => crypto.createHash("sha256").update(s).digest("hex");
 
@@ -238,11 +240,12 @@ function createStore(pool) {
 
   /* ---------- 메뉴별 주문 집계 ---------- */
 
-  // 주문 건수 = 해당 메뉴(카테고리)가 포함된 주문 수, 주문 수량 = 수량 합. 취소된 주문은 제외.
+  // 오늘(한국 시간) 주문만 집계해 매일 자정에 0부터 다시 센다. 취소된 주문은 제외.
+  // 주문 건수 = 해당 메뉴(카테고리)가 포함된 주문 수, 주문 수량 = 수량 합.
   // 한 주문에 같은 카테고리 메뉴가 여러 개 있어도 카테고리 주문 건수는 1건이다.
   async function menuOrderStats() {
     const from = `FROM order_items oi
-         JOIN orders o ON o.id = oi.order_id AND o.status <> 'cancelled'
+         JOIN orders o ON o.id = oi.order_id AND o.status <> 'cancelled' AND ${isToday("o.ordered_at")}
          JOIN menus  m ON m.id = oi.menu_id`;
     const counts = `COUNT(DISTINCT oi.order_id) AS "orderCount", COALESCE(SUM(oi.quantity), 0) AS quantity`;
     const total = await row(`SELECT ${counts} ${from}`);
@@ -263,7 +266,7 @@ function createStore(pool) {
 
   // 오늘(한국 시간) 들어온 앱 주문 수 기준. 주문 1건당 1%, 100건이면 100%. 자정에 0부터 다시 센다.
   async function crowd() {
-    const today = `(ordered_at AT TIME ZONE ${TZ})::date = (now() AT TIME ZONE ${TZ})::date AND status <> 'cancelled'`;
+    const today = `${isToday("ordered_at")} AND status <> 'cancelled'`;
     const { appOrders, hourNow } = await row(
       `SELECT (SELECT COUNT(*) FROM orders WHERE ${today}) AS "appOrders",
               EXTRACT(HOUR FROM now() AT TIME ZONE ${TZ})::int AS "hourNow"`,

@@ -286,7 +286,7 @@ describe("메뉴별 주문 집계", () => {
   };
   const diff = (a, b) => [b.orderCount - a.orderCount, b.quantity - a.quantity];
 
-  test("전체 / 카테고리별 / 메뉴별로 주문 건수와 수량을 구분, 취소 주문은 제외", async () => {
+  test("오늘 주문을 전체 / 카테고리별 / 메뉴별로 집계, 건수와 수량 구분, 취소·어제 주문 제외", async () => {
     const x = await menuByName("떡만두라면");
     const y = await menuByName("해장라면");
     const k = await menuByName("비빔밥");
@@ -308,6 +308,14 @@ describe("메뉴별 주문 집계", () => {
     assert.deepEqual(diff(before.cat("라면"), after.cat("라면")), [4, 13]);
     assert.deepEqual(diff(before.cat("한식"), after.cat("한식")), [1, 1]);
     assert.deepEqual(diff(before.stats.total, after.stats.total), [4, 14]);
+
+    // 어제(한국 시간) 주문은 집계에서 빠지고, 오늘 주문만 센다 (매일 자정 초기화)
+    const old = await order(u1, [{ menuId: x.id, quantity: 4 }]);
+    await sql(
+      "UPDATE orders SET ordered_at = (date_trunc('day', now() AT TIME ZONE 'Asia/Seoul') - interval '1 minute') AT TIME ZONE 'Asia/Seoul' WHERE id = $1",
+      [old.body.order.id],
+    );
+    assert.deepEqual(diff(after.menu(x.id), (await snapshot()).menu(x.id)), [0, 0]);
 
     const { categories, total } = after.stats;
     for (let i = 1; i < categories.length; i++)
@@ -548,6 +556,17 @@ describe("혼잡도", () => {
     assert.equal(after.appOrders - before.appOrders, 2);
     assert.equal(after.percent, Math.min(100, after.appOrders));
     assert.equal(after.hourly.reduce((s, h) => s + h.count, 0), after.appOrders);
+
+    // 자정 경계: 어제 23:59(한국 시간) 주문은 빠지고 오늘 00:01 주문은 들어간다
+    const base0 = (await call("GET", "/api/crowd")).body.appOrders;
+    const midnight = "date_trunc('day', now() AT TIME ZONE 'Asia/Seoul')";
+    await sql(
+      `INSERT INTO orders (user_id, total_amount, pay_method, ticket_no, ordered_at) VALUES
+         ($1, 0, '카드결제', 100, (${midnight} - interval '1 minute') AT TIME ZONE 'Asia/Seoul'),
+         ($1, 0, '카드결제', 100, (${midnight} + interval '1 minute') AT TIME ZONE 'Asia/Seoul')`,
+      [u.id],
+    );
+    assert.equal((await call("GET", "/api/crowd")).body.appOrders - base0, 1);
 
     // 100건을 넘어도 100%
     await sql(

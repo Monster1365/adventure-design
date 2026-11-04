@@ -82,7 +82,7 @@ test/api.test.js   통합 테스트
 | GET | `/api/me` | | 현재 사용자 (비로그인이면 `null`) |
 | GET | `/api/menus?sort=` | | `default` `price_asc` `price_desc` `rating_desc` `rating_asc` |
 | GET | `/api/menus/:id/reviews` | | 메뉴, 리뷰(최신순), 내 작성 가능 여부 |
-| GET | `/api/stats/menu-orders` | | 전체 · 카테고리별 · 메뉴별 주문 건수와 수량 (취소 제외) |
+| GET | `/api/stats/menu-orders` | | 오늘(한국 시간) 전체 · 카테고리별 · 메뉴별 주문 건수와 수량 (취소 제외, 자정 초기화) |
 | GET | `/api/food-info` | | 메뉴별 알레르기 · 코너별 원산지 |
 | GET/POST | `/api/orders` | ✔ | 내 주문 목록 / 주문 생성 |
 | POST | `/api/orders/:id/reorder` | ✔ | `{cart}` 에 과거 주문을 합친 장바구니 반환 |

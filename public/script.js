@@ -423,11 +423,11 @@ function renderStats() {
   const { total, categories } = stats;
   const pct = (n) => Math.round((n / (total.orderCount || 1)) * 100);
   $("#statList").innerHTML = total.orderCount
-    ? `<div class="card sumc"><h2>전체 주문</h2><div class="stats"><div><span>주문 건수</span><b>${total.orderCount}건</b></div><div><span>주문 수량</span><b>${total.quantity}개</b></div><div><span>카테고리</span><b>${categories.length}</b></div></div></div>` +
+    ? `<div class="card sumc"><h2>오늘 전체 주문</h2><div class="stats"><div><span>주문 건수</span><b>${total.orderCount}건</b></div><div><span>주문 수량</span><b>${total.quantity}개</b></div><div><span>카테고리</span><b>${categories.length}</b></div></div></div>` +
       categories
         .map((c) => {
           const max = c.menus[0]?.orderCount || 1;
-          return `<section class="card cat"><header><h2>${esc(c.category)}</h2><div class="num"><b>${c.orderCount}건</b><span>수량 ${c.quantity}개</span></div></header><div class="bar"><i style="width:${Math.max(3, pct(c.orderCount))}%"></i></div><small class="share">전체 주문의 ${pct(c.orderCount)}%</small><ol class="rank">${c.menus
+          return `<section class="card cat"><header><h2>${esc(c.category)}</h2><div class="num"><b>${c.orderCount}건</b><span>수량 ${c.quantity}개</span></div></header><div class="bar"><i style="width:${Math.max(3, pct(c.orderCount))}%"></i></div><small class="share">오늘 주문의 ${pct(c.orderCount)}%</small><ol class="rank">${c.menus
             .map(
               (m, i) =>
                 `<li class="item"><span class="no">${i + 1}</span><div class="ph" aria-hidden="true">${img(m)}</div><div class="info"><h3>${esc(m.name)}</h3><div class="bar"><i style="width:${Math.max(4, (m.orderCount / max) * 100)}%"></i></div></div><div class="num"><b>${m.orderCount}건</b><span>수량 ${m.quantity}개</span></div></li>`,
@@ -435,7 +435,7 @@ function renderStats() {
             .join("")}</ol></section>`;
         })
         .join("")
-    : state("아직 집계할 주문이 없어요.");
+    : state("오늘은 아직 주문이 없어요.<br>주문이 들어오면 여기에 집계돼요.");
 }
 
 function renderWrite() {
