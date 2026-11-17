@@ -119,34 +119,6 @@
                 <path d="m9 6 6 6-6 6" />
               </svg>
             </button>
-            <button class="row" data-go="crowd">
-              <span class="ic"
-                ><svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M3 17l5-6 4 3 8-9" />
-                  <path d="M3 21h18" /></svg
-              ></span>
-              <div><b>혼잡도 표시</b><span>실시간 대기 상황 확인</span></div>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-              >
-                <path d="m9 6 6 6-6 6" />
-              </svg>
-            </button>
             <button class="row" data-go="history">
               <span class="ic"
                 ><svg
@@ -193,35 +165,6 @@
               ></span>
               <div>
                 <b>리뷰 쓰기</b><span>주문했던 메뉴에 별점을 남겨요</span>
-              </div>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-              >
-                <path d="m9 6 6 6-6 6" />
-              </svg>
-            </button>
-            <button class="row" data-go="stats">
-              <span class="ic"
-                ><svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                >
-                  <path d="M5 20V10M12 20V4M19 20v-7" /></svg
-              ></span>
-              <div>
-                <b>메뉴별 주문 건수</b
-                ><span>어떤 메뉴가 많이 팔렸는지 봐요</span>
               </div>
               <svg
                 width="20"
@@ -331,8 +274,10 @@
         >
           <div class="grab"></div>
           <div class="sh-h">
-            <b>장바구니</b
-            ><button class="ib" id="shClose" aria-label="닫기">
+            <b>장바구니</b>
+            <span class="sh-a"
+              ><button class="add clr" data-clearcart id="shClear">전체 삭제</button
+              ><button class="ib" id="shClose" aria-label="닫기">
               <svg
                 width="22"
                 height="22"
@@ -344,7 +289,7 @@
               >
                 <path d="M6 6l12 12M18 6 6 18" />
               </svg>
-            </button>
+            </button></span>
           </div>
           <div id="shList"></div>
           <button class="btn" style="margin-top: 8px" data-go="cart">
@@ -559,6 +504,8 @@
             </div>
             <p class="note">실제 상황과 다소 차이가 있을 수 있습니다.</p>
           </div>
+          <p class="lab">메뉴별 주문 건수</p>
+          <div id="statList"></div>
         </div>
         <nav class="nav" data-nav></nav>
       </section>
@@ -581,27 +528,6 @@
           <h1>주문내역</h1>
         </div>
         <div class="body" id="hist"></div>
-        <nav class="nav" data-nav></nav>
-      </section>
-
-      <section class="scr" id="stats">
-        <div class="top">
-          <button class="ib" data-back="home" aria-label="뒤로">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              stroke-linecap="round"
-            >
-              <path d="M15 5l-7 7 7 7" />
-            </svg>
-          </button>
-          <h1>메뉴별 주문 건수</h1>
-        </div>
-        <div class="body" id="statList"></div>
         <nav class="nav" data-nav></nav>
       </section>
 

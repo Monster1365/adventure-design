@@ -31,7 +31,6 @@ const PROTECTED = [
   "pay",
   "done",
   "history",
-  "stats",
   "me",
   "write",
   "food",
@@ -69,6 +68,7 @@ let user = null,
   foodTab = "",
   crowd = null,
   appVersion = "v 0.1.0-proto",
+  confirmClear = false, // '전체 삭제'를 두 번 눌러 확인
   busy = false;
 let cart = {},
   tab = "한식",
@@ -256,10 +256,11 @@ function go(id, back) {
   $("#" + cur).classList.remove("on");
   cur = id;
   $("#" + id).classList.add("on");
+  confirmClear = false;
   if (id === "menu" || id === "home") loadMenus();
   if (id === "home" || id === "crowd") loadCrowd();
   if (id === "history") loadOrders();
-  if (id === "stats") loadStats();
+  if (id === "crowd") loadStats();
   if (id === "me") {
     loadMyReviews();
     if (!appVersion)
@@ -534,18 +535,20 @@ function render() {
   const ob = $("#orderBtn");
   ob.disabled = !c;
   ob.textContent = c ? `${won(total())} 주문하기` : "메뉴를 담아주세요";
+  // 장바구니 미리보기: 메뉴별 수량 조절 + 전체 삭제
   $("#shList").innerHTML =
     lines()
       .map(
         (l) =>
-          `<div class="mini"><span>${esc(l.name)}</span><span>× ${l.q}</span></div>`,
+          `<div class="mini"><span class="nm">${esc(l.name)}</span><b>${won(l.price * l.q)}</b>${ctrl(l.id, l.q)}</div>`,
       )
       .join("") || '<div class="empty">담은 메뉴가 없어요</div>';
   const ls = lines(),
     g = {};
   ls.forEach((l) => (g[l.category] ??= []).push(l));
   $("#cartList").innerHTML = ls.length
-    ? Object.entries(g)
+    ? '<div class="clr-row"><button class="add clr" data-clearcart>전체 삭제</button></div>' +
+      Object.entries(g)
         .map(
           ([k, a]) =>
             `<div class="grp"><h2>${esc(k)} 코너</h2>${a.map((l) => `<div class="ci"><div class="ph" aria-hidden="true">${img(l)}</div><div class="m"><h3>${esc(l.name)}</h3><p>단가 ${won(l.price)}${l.stock <= 5 ? ` · 재고 ${l.stock}개` : ""}</p><div class="b">${ctrl(l.id, l.q)}<b>${won(l.price * l.q)}</b></div></div></div>`).join("")}</div>`,
@@ -553,6 +556,12 @@ function render() {
         .join("") +
       `<div class="sum"><span>총 메뉴 수</span><b>${c}개</b></div>`
     : '<div class="empty">장바구니가 비어 있어요.<br>메뉴를 골라 담아보세요.</div>';
+  $$("[data-clearcart]").forEach((b) => {
+    b.hidden = !c;
+    b.classList.toggle("warn", confirmClear);
+    b.textContent = confirmClear ? "한 번 더 누르면 모두 삭제돼요" : "전체 삭제";
+  });
+  if (!c) closeSheet();
   $("#cartTotal").textContent = $("#payTotal").textContent = won(total());
   $("#toPay").disabled = !c;
   $("#payOpts").innerHTML = PAY.map(
@@ -814,7 +823,18 @@ document.addEventListener("click", (e) => {
     tab = d.tab;
     return render();
   }
+  if ("clearcart" in d) {
+    if (!confirmClear) {
+      confirmClear = true;
+      return render();
+    }
+    confirmClear = false;
+    cart = {};
+    render();
+    return toast("장바구니를 비웠어요");
+  }
   if (d.d) {
+    confirmClear = false;
     const id = d.id,
       m = get(id),
       q = (cart[id] || 0) + +d.d;
@@ -878,10 +898,7 @@ document.addEventListener("click", (e) => {
     $("#sheet").classList.add("on");
     $("#dim").classList.add("on");
   }
-  if (t.id === "shClose") {
-    $("#sheet").classList.remove("on");
-    $("#dim").classList.remove("on");
-  }
+  if (t.id === "shClose") (closeSheet(), render());
   if (t.id === "placeBtn") placeOrder();
 });
 document.addEventListener("input", (e) => {
@@ -906,14 +923,17 @@ document.addEventListener("keydown", (e) => {
     e.target.click();
   }
 });
-$("#dim").onclick = () => {
+function closeSheet() {
   $("#sheet").classList.remove("on");
   $("#dim").classList.remove("on");
-};
+  confirmClear = false;
+}
+$("#dim").onclick = () => (closeSheet(), render());
 render();
 booted = boot();
 // 홈/혼잡도 화면을 보고 있는 동안 30초마다 혼잡도 갱신
 setInterval(() => {
-  if (user && (cur === "home" || cur === "crowd") && !document.hidden)
-    loadCrowd();
+  if (!user || document.hidden) return;
+  if (cur === "home" || cur === "crowd") loadCrowd();
+  if (cur === "crowd") loadStats();
 }, 30000);

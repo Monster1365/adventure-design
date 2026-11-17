@@ -1967,3 +1967,36 @@ button.info {
   background: #bf2b23;
   box-shadow: 0 10px 24px rgba(214, 52, 43, 0.36);
 }
+/* 장바구니 미리보기: 메뉴별 수량 조절 + 전체 삭제 */
+.sh-a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.add.clr {
+  height: 34px;
+  font-size: 13px;
+}
+.mini {
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 14px;
+}
+.mini .nm {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+}
+.mini > b {
+  flex: none;
+  font-size: 14px;
+  color: var(--navy);
+}
+.mini .qty {
+  flex: none;
+}
+.clr-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 4px 0 4px;
+}
