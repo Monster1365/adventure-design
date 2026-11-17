@@ -2000,3 +2000,48 @@ button.info {
   justify-content: flex-end;
   margin: 4px 0 4px;
 }
+/* 실시간 혼잡도: 주문 데이터 카드 안의 메뉴별 주문 건수 */
+.odata {
+  margin-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.odata .empty {
+  padding: 20px 0 4px;
+}
+.od-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 18px 0 2px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.od-h small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sub);
+}
+.od-empty {
+  font-size: 13px;
+  color: var(--sub);
+  margin: 4px 0 2px;
+}
+.odata .cat {
+  padding-top: 14px;
+  margin-top: 14px;
+  border-top: 1px dashed var(--line);
+}
+.odata .cat:first-of-type {
+  border-top: 0;
+  margin-top: 4px;
+}
+.odata .cat header h2 {
+  font-size: 15px;
+  margin: 0;
+}
+.odata .cat .num b {
+  font-size: 15px;
+}
+.odata + .note {
+  margin-top: 16px;
+}
